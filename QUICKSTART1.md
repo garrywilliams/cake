@@ -11,8 +11,8 @@
 ## Clone the repo
 
 ```bash
-git clone 
-cd cake-bakery
+git clone git@github.com:garrywilliams/cake.git
+cd cake
 ```
 
 ## API - Part 1
