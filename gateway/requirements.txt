@@ -1,0 +1,11 @@
+django
+djangorestframework
+drf-yasg
+celery
+redis
+flower
+requests
+gunicorn
+psycopg2-binary
+django-prometheus
+prometheus_client

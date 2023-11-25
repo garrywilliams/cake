@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: gateway_db
+      POSTGRES_USER: gw1
+      POSTGRES_PASSWORD: gw1
+    ports:
+      - "5460:5432"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6378:6379"
+
+  web:
+    build: ./gateway
+    volumes:
+      - ./gateway:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    entrypoint: /code/entrypoint.sh
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      REDIS_URL: "redis://redis:6379/0"
+      POSTGRES_DB: gateway_db
+      POSTGRES_USER: gw1
+      POSTGRES_PASSWORD: gw1
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      CAKE_URL: "http://cake:8000/api/cakes/"
+      DETECTOR_URL: "http://detector:8000/detect-cake/"
+      DETECTOR_THRESHOLD: 0.1
+
+  celery:
+    build: ./gateway
+    volumes:
+      - ./gateway:/code
+    depends_on:
+      - redis
+    entrypoint: /code/celery-entrypoint.sh
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+
+  cake:
+    build: ./bakery
+    volumes:
+      - ./bakery:/usr/src/app
+    ports:
+      - "8080:8000"
+
+  detector:
+    build: ./detector
+    volumes:
+      - ./detector:/usr/src/app
+    ports:
+      - "8081:8000"
+
+  flower:
+    build: ./gateway
+    volumes:
+      - ./gateway:/code
+    depends_on:
+      - redis
+    ports: 
+      - "5555:5555"
+    entrypoint: /code/flower-entrypoint.sh
+    environment:
+      CELERY_BROKER_URL: "redis://redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/0"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      
+volumes:
+  postgres_data:
